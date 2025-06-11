@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
@@ -52,7 +53,6 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.todolist.ui.theme.TodolistTheme
@@ -83,12 +83,24 @@ fun MainPage() {
 
     val focusManager = LocalFocusManager.current
 
-    val alertDialogStatus = remember {
+    val deleteDialogStatus = remember {
+        mutableStateOf(false)
+    }
+
+    val updateDialogStatus = remember {
+        mutableStateOf(false)
+    }
+
+    val textDialogStatus = remember {
         mutableStateOf(false)
     }
 
     val clickedIndexValue = remember {
         mutableIntStateOf(0)
+    }
+
+    val clickedItem = remember {
+        mutableStateOf("")
     }
 
     // Wrap your entire content in a Scaffold
@@ -185,17 +197,26 @@ fun MainPage() {
                                     fontSize = 18.sp,
                                     maxLines = 2,
                                     overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.width(300.dp),
+                                    modifier = Modifier
+                                        .width(300.dp)
+                                        .clickable {
+                                            clickedItem.value = item
+                                            textDialogStatus.value = true
+                                        }
+                                    ,
                                 )
 
                                 Row {
-                                    IconButton(onClick = {}){
+                                    IconButton(onClick = {
+                                        clickedItem.value = item
+                                        updateDialogStatus.value = true
+                                    }){
                                         Icon(Icons.Filled.Edit, contentDescription = "Edit", tint = Color.White)
                                     }
 
                                     IconButton(onClick = {
                                         clickedIndexValue.intValue = index
-                                        alertDialogStatus.value = true
+                                        deleteDialogStatus.value = true
                                     }){
                                         Icon(Icons.Filled.Delete, contentDescription = "Delete", tint = Color.White)
                                     }
@@ -206,10 +227,10 @@ fun MainPage() {
                 )
             }
 
-            if (alertDialogStatus.value) {
+            if (deleteDialogStatus.value) {
                 BasicAlertDialog(
                     onDismissRequest = {
-                        alertDialogStatus.value = false
+                        deleteDialogStatus.value = false
                     },
                 ) {
                     Surface(
@@ -228,7 +249,7 @@ fun MainPage() {
                             ) {
                                 TextButton(
                                     onClick = {
-                                        alertDialogStatus.value = false
+                                        deleteDialogStatus.value = false
                                     },
                                 ) {
                                     Text("Cancel")
@@ -236,13 +257,87 @@ fun MainPage() {
                                 Spacer(modifier = Modifier.width(8.dp))
                                 TextButton(
                                     onClick = {
-                                        alertDialogStatus.value = false
+                                        deleteDialogStatus.value = false
                                         itemList.removeAt(clickedIndexValue.intValue)
                                         writeData(itemList, myContext)
                                         Toast.makeText(myContext, "Deleted", Toast.LENGTH_SHORT).show()
                                     },
                                 ) {
                                     Text("Confirm")
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (updateDialogStatus.value) {
+                BasicAlertDialog(
+                    onDismissRequest = {
+                        updateDialogStatus.value = false
+                    },
+                ) {
+                    Surface(
+                        modifier = Modifier.wrapContentWidth().wrapContentHeight(),
+                        shape = MaterialTheme.shapes.large,
+                        tonalElevation = AlertDialogDefaults.TonalElevation
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            TextField(value = clickedItem.value, onValueChange = { clickedItem.value = it })
+                            Spacer(modifier = Modifier.height(24.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End
+                            ) {
+                                TextButton(
+                                    onClick = {
+                                        updateDialogStatus.value = false
+                                    },
+                                ) {
+                                    Text("Cancel")
+                                }
+                                Spacer(modifier = Modifier.width(8.dp))
+                                TextButton(
+                                    onClick = {
+                                        itemList[clickedIndexValue.intValue] = clickedItem.value
+                                        updateDialogStatus.value = false
+                                        writeData(itemList, myContext)
+                                        Toast.makeText(myContext, "Updated", Toast.LENGTH_SHORT).show()
+                                    },
+                                ) {
+                                    Text("Confirm")
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (textDialogStatus.value) {
+                BasicAlertDialog(
+                    onDismissRequest = {
+                        textDialogStatus.value = false
+                    },
+                ) {
+                    Surface(
+                        modifier = Modifier.wrapContentWidth().wrapContentHeight(),
+                        shape = MaterialTheme.shapes.large,
+                        tonalElevation = AlertDialogDefaults.TonalElevation
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(clickedItem.value)
+                            Spacer(modifier = Modifier.height(24.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End
+                            ) {
+                                Spacer(modifier = Modifier.width(8.dp))
+                                TextButton(
+                                    onClick = {
+                                        textDialogStatus.value = false
+                                    },
+                                ) {
+                                    Text("OK")
                                 }
                             }
                         }
